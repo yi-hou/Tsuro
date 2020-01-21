@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+import sys
+import json
+import os
+import subprocess
+import time
+from multiprocessing import Process
+
+def server_task(HOST, PORT):
+	os.system("./xserver " + HOST + " " + PORT)
+
+def client_task(HOST, PORT, name, strategy):
+	os.system('./xclient ' + HOST + ' ' + PORT + ' ' + name + ' ' + strategy)
+
+if __name__ == '__main__':
+	HOST = '127.0.0.1'
+	PORT = '8000'
+
+	if len(sys.argv) == 2:
+		PORT = int(sys.argv[1])
+	elif len(sys.argv) == 3:
+		PORT = int(sys.argv[1])
+		HOST = sys.argv[2]
+
+	inputs = []
+	for line in sys.stdin.readlines():
+		if line == '':
+			break
+		line = line[:-1]
+		# line.encode(encoding='UTF-8')
+		line = json.loads(line)
+		inputs += line
+
+	# raise error when input is incorrect
+	if len(inputs) > 5 or len(inputs) < 3:
+		raise ValueError('Input length is incorrect')
+
+	# start server
+	p_server = Process(target=server_task, args=(HOST, PORT))
+	p_server.start()
+	
+	time.sleep(5)
+	# start client
+	threads = []
+	for i in inputs:
+		p = Process(target=client_task, args=(HOST, PORT, i['name'].lower(), i['strategy'].lower()))
+		p.start()
+		threads.append(p)
+		time.sleep(2)
+	
+	p_server.join()
+	for p in threads:
+		p.join()

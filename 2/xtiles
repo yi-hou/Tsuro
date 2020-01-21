@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+
+import sys
+sys.path.insert(0, '../Common')
+from tiles import Tile 
+import tiles
+import ast
+import json
+
+# read json file and find corresponding index of tile
+# create tile based on input tile[tile_index, degrees, port]
+def response(query):
+    # read json into list 
+    tlines = []
+    with open('tiles.json', 'r') as f:
+        lines = f.read().splitlines()
+    for line in lines:
+        line = ast.literal_eval(line)
+        tlines.append(line)
+
+    for i in range(0, len(tlines)):
+        if i == query[0]:
+            t = Tile(tlines[i][1], POSITION)
+            t.rotate(query[1])
+            exit = t.find_exit(query[2])
+            responses.append((query[2],exit))
+
+
+#[tile_index, degrees, port]
+def parse(queries):
+    for ele in queries:
+        tile_index = ele[0]
+        degree = ele[1]
+        port = ele[2]
+        query = [tile_index, degree, port]
+        queries_list.append(query)
+
+
+if __name__ == '__main__':
+    POSITION = (0, 0)
+    queries_list = []
+    tiles = []
+    responses = []
+    queries = []
+    for line in sys.stdin.readlines():
+        if line == '':
+            break
+        line = line[:-1]
+        line.encode(encoding='UTF-8')
+        line = ast.literal_eval(line)
+        queries.append(line)
+
+    parse(queries)
+    for query in queries_list:
+        response(query)
+    for res in responses:
+        print("[if ", res[0], " is the entrance, ", res[1], " is the exit.]")

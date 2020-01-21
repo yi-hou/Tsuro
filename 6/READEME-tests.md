@@ -1,0 +1,1 @@
+There are several ways to test. We can either choose all dumb strategy which has already been tested in the previous phase 5 since can be used to test phase 6, or we can look at the xserver.log to see if the log is wrong, or we can look at the graphic output to check this visually

@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import sys
+import ast
+import json
+
+sys.path.insert(0, '../Common')
+sys.path.insert(0, '../Player');
+sys.path.insert(0, '../Admin');
+from rules import Rule
+from board import Board
+from avatar import Avatar
+from tiles import Tile
+from referee import Referee
+from player import Player
+
+if __name__ == '__main__':
+	board = Board([], []);
+	players = [];
+	for line in sys.stdin.readlines():
+		if line == '':
+			break
+		line = line[:-1]
+		line.encode(encoding='UTF-8')
+		line = ast.literal_eval(line)
+		for p in line:
+			players.append(Player('dumb', p));
+	referee = Referee(players);
+	winner, loser = referee.run();
+	winners_name = [];
+	losers_name = [];
+	for w_list in winner:
+		names = [];
+		for w in w_list:
+			names.append(w.get_name());
+		names.sort()
+		winners_name.append(names);
+	for l in loser:
+		losers_name.append(l.get_name());
+	losers_name.sort()
+	output = {"winners": winners_name, "losers": losers_name};
+	print(json.dumps(output));

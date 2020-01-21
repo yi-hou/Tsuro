@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+import sys
+import ast
+import json
+
+sys.path.insert(0, '../Common')
+from board import Board
+from tiles import Tile
+from avatar import Avatar
+
+# The input should be one line for one placement, sample input as STDIN:
+# [2,0,"white","A", 0, 0]
+# ["white", 4,0,0,1]
+colors = ["white", "black", "red", "green", "blue"]
+# check the input if is not valid, exit.
+# Separate input to initial_placements and intermediate_placements
+def check_input(input):
+	initial_placements = []
+	intermediate_placements = []
+	for line in input:
+
+		if len(line) == 6:
+			if line[0] not in range(35):
+				exit("tile-index should from the range 0 to 34")
+			elif line[1] not in [0, 90, 180, 270]:
+				exit("rotation should be one of 0, 90, 180, 270")
+			elif line[2] not in colors:
+				exit('color should be one of "white", "black", "red", "green", "blue"')
+			elif line[3] not in [i for i in 'ABCDEFGH']:
+				exit('port should be from the range "A". . . "H"')
+			elif line[4] not in range(10) or line[5] not in range(10):
+				exit('x and y should be both from the range 0. . . 9 ')
+			else:
+				initial_placements.append(line)
+
+		elif len(line) == 5:
+			if line[1] not in range(35):
+				exit("tile-index should from the range 0 to 34")
+			elif line[2] not in [0, 90, 180, 270]:
+				exit("rotation should be one of 0, 90, 180, 270")
+			elif line[0] not in ["white", "black", "red", "green", "blue"]:
+				exit('color should be one of "white", "black", "red", "green", "blue"')
+			elif line[4] not in range(10) or line[3] not in range(10):
+				exit('x and y should be both from the range 0. . . 9 ')
+			else:
+				intermediate_placements.append(line)
+		else:
+			exit("Invalid length of the shape")
+
+	return initial_placements, intermediate_placements
+
+
+# take initial_placements, intermediate_placements and construct board
+def check_board(initial_placements, intermediate_placements):
+	# local variables
+	start_pos = {}
+	output = []
+	tiles = []
+	avatars = {}
+	tile_info = {}
+	# create avatars and initial tiles
+	for placement in initial_placements:
+		idx = placement[0]
+		rotation = placement[1]
+		color = placement[2]
+		port = placement[3]
+		x = placement[4]
+		y = placement[5]
+
+		tile = Tile(idx, (x, y))
+		tile.rotate(rotation)
+		avatar = Avatar(color, ((x, y), port))
+		# set variables to local variables
+		tiles.append(tile)
+		avatars[color] = avatar
+		tile_info[(x, y)] = (rotation, idx)
+		start_pos[(x, y)] = port
+
+	# try to construct a board and put avatar, tiles into it
+	try:
+		board = Board(tiles, avatars.values())
+
+		# put intermediate placements into board
+		for p in intermediate_placements:
+			color = p[0]
+			idx = p[1]
+			rotation = p[2]
+			x = p[3]
+			y = p[4]
+
+			tile = Tile(idx, (x, y))
+			tile.rotate(rotation)
+			board.add_tile(tile, avatars[color])
+			tiles.append(tile)
+			tile_info[(x, y)] = (rotation, idx)
+			board.update_avatars()
+
+		# check each avatar's status after placing tiles
+		for a in board.get_avatars():
+			a_color = a.get_color()
+			a_pos = a.get_position()[0]
+			a_port = a.get_position()[1]
+
+			if a_pos in start_pos and a_port == start_pos[a_pos]:
+				output.append([a_color, " collided"])
+			elif (a_pos[1] == 0 and (a_port == 'A' or a_port == 'B')) or \
+					(a_pos[1] == 9 and (a_port == 'E' or a_port == 'F')) or \
+					(a_pos[0] == 0 and (a_port == 'G' or a_port == 'H')) or \
+					(a_pos[0] == 9 and (a_port == 'C' or a_port == 'D')):
+				output.append([a_color, " exited"])
+			else:
+				output.append([a_color, tile_info[a_pos][1], tile_info[a_pos][0], a_port, a_pos[0],
+							   a_pos[1]])
+
+		# check no played color
+		for c in colors:
+			if c not in avatars:
+				output.append([c, " never played"])
+		return output
+
+	except:
+		exit("rejected by the board!")
+
+# take in the STDIN as the input and convert it to list
+def take_input():
+	total_lines = []
+
+	for line in sys.stdin.readlines():
+		if line == '':
+			break
+		line = line[:-1]
+		line.encode(encoding='UTF-8')
+		line = ast.literal_eval(line)
+		total_lines.append(line)
+	return total_lines
+
+
+if __name__ == '__main__':
+	lines = take_input()
+	initial_placements, intermediate_placements = check_input(lines)
+	if initial_placements:
+		output = check_board(initial_placements, intermediate_placements)
+		print("------------output------------")
+		print(json.dumps(output))
+	else:
+		exit("No initial placements")

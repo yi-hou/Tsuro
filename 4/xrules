@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+import sys
+import ast
+import json
+
+sys.path.insert(0, '../Common')
+from rules import Rule
+from board import Board
+from avatar import Avatar
+from tiles import Tile
+
+
+# [[color, tile-index, rotation, x, y], tile-index, tile-index]
+# Check input placement by using rule checker
+def check_rules(placement):
+    global board, avatars
+
+    color = placement[0][0]
+    tile_index = placement[0][1]
+    rotation = placement[0][2]
+    position = (placement[0][3], placement[0][4])
+
+    a = avatars[color]
+    t = Tile(tile_index, position)
+    t.rotate(rotation)
+    t1 = Tile(placement[1], position)
+    t2 = Tile(placement[2], position)
+    tiles = [t1, t2]
+    rule_checker = Rule()
+    board.update_avatars();
+    if rule_checker.check_placement(board, a, t, tiles):
+        return 'legal'
+    else:
+        return 'illegal'
+
+
+# Construct the board by initialize the first tiles
+def initial_board(initial_placements):
+    global board, avatars
+    # local variables
+    tiles = []
+    # create avatars and initial tiles
+    for placement in initial_placements:
+        idx = placement[0]
+        rotation = placement[1]
+        color = placement[2]
+        port = placement[3]
+        x = placement[4]
+        y = placement[5]
+
+        tile = Tile(idx, (x, y))
+        tile.rotate(rotation)
+        avatar = Avatar(color, ((x, y), port), [])
+        # set variables to local variables
+        tiles.append(tile)
+        avatars[color] = avatar
+
+    board = Board(tiles, list(avatars.values()))
+
+
+
+# Take in the STDIN as the input and convert it to list
+def take_input():
+    initial_placements = []
+    intermediate_placements = []
+
+    for line in sys.stdin.readlines():
+        if line == '':
+            break
+        line = line[:-1]
+        line.encode(encoding='UTF-8')
+        line = ast.literal_eval(line)
+        if len(line) == 3:
+            intermediate_placements.append(line)
+        else:
+            initial_placements.append(line)
+    return initial_placements, intermediate_placements
+
+
+if __name__ == '__main__':
+    # global variables
+    board = None
+    output = []
+    avatars = {}
+
+    initial_placements, intermediate_placements = take_input()
+    initial_board(initial_placements)
+
+    for placement in intermediate_placements:
+        output.append(check_rules(placement))
+    print(json.dumps(output))
